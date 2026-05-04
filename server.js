@@ -1,38 +1,39 @@
 const express = require("express");
 const cors = require("cors");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 const app = express();
 
+// ---------------- MIDDLEWARE ----------------
+app.use(express.json());
+
 app.use(cors({
-  origin: "*",
+  origin: "*", // for testing; later you can restrict to your domain
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"]
 }));
-app.use(express.json());
 
-// 🔥 EMAIL SETUP
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: "armanshaik5120@gmail.com",       // 👈 your email
-    pass: "wauk ngue husm pxzc"     // 👈 app password
-  }
+// ---------------- RESEND SETUP ----------------
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// ---------------- TEST ROUTE ----------------
+app.get("/", (req, res) => {
+  res.send("🔥 Backend is running successfully");
 });
 
-// 📩 CONTACT ROUTE
+// ---------------- CONTACT ROUTE ----------------
 app.post("/contact", async (req, res) => {
   const { name, email, phone, message } = req.body;
 
   console.log("🔥 CONTACT HIT:", req.body);
 
   try {
-    await transporter.sendMail({
-      from: `"ARk Agency Website" <armanshaik5120@gmail.com>`,
-      to: "armanshaik5120@gmail.com", // 👈 where YOU receive leads
-      subject: "🚀 New Lead from Website",
+    const response = await resend.emails.send({
+      from: "onboarding@resend.dev",
+      to: "armanshaik5120@gmail.com", // 👈 CHANGE THIS TO YOUR REAL EMAIL
+      subject: "New Contact Form Submission",
       html: `
-        <h2>New Client Enquiry</h2>
+        <h2>New Lead Received</h2>
         <p><b>Name:</b> ${name}</p>
         <p><b>Email:</b> ${email}</p>
         <p><b>Phone:</b> ${phone}</p>
@@ -40,14 +41,27 @@ app.post("/contact", async (req, res) => {
       `
     });
 
-    res.json({ success: true });
+    console.log("📩 EMAIL SENT SUCCESSFULLY:", response);
+
+    res.json({
+      success: true,
+      message: "Form submitted and email sent successfully"
+    });
+
   } catch (error) {
-    console.error("❌ Email error:", error);
-    res.status(500).json({ success: false });
+    console.log("❌ EMAIL ERROR:", error);
+
+    res.json({
+      success: false,
+      message: "Form received but email failed",
+      error: error.message
+    });
   }
 });
+
+// ---------------- SERVER START ----------------
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🔥 Server running on port ${PORT}`);
 });
