@@ -1,38 +1,48 @@
+const express = require("express");
+const cors = require("cors");
+
+const app = express(); // ✅ MUST BE FIRST
+
+app.use(express.json());
+app.use(cors());
+
+// ---------------- ROUTES ----------------
+
+// Home route
+app.get("/", (req, res) => {
+  res.send("Server running");
+});
+
+// Contact route
 app.post("/contact", async (req, res) => {
-  const { name, email, phone, message } = req.body;
+  console.log(req.body);
+  res.send("Contact received");
+});
 
-  console.log("New lead:", req.body);
+// Webhook verification
+app.get("/webhook", (req, res) => {
+  const VERIFY_TOKEN = "ar_bot_123";
 
-  try {
-    // 1. EMAIL
-    await resend.emails.send({
-      from: "onboarding@resend.dev",
-      to: "armanshaik5120@gmail.com",
-      subject: "New Lead",
-      html: `<h3>${name}</h3><p>${email}</p><p>${message}</p>`
-    });
+  const mode = req.query["hub.mode"];
+  const token = req.query["hub.verify_token"];
+  const challenge = req.query["hub.challenge"];
 
-    // 2. WHATSAPP ALERT
-    await axios.post(
-      `https://graph.facebook.com/v19.0/${process.env.PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to: "91XXXXXXXXXX",
-        type: "text",
-        text: { body: `New lead: ${name} (${phone})` }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
-
-    res.json({ success: true });
-
-  } catch (err) {
-    console.log(err);
-    res.json({ success: false });
+  if (mode && token === VERIFY_TOKEN) {
+    res.status(200).send(challenge);
+  } else {
+    res.sendStatus(403);
   }
+});
+
+// Webhook messages
+app.post("/webhook", (req, res) => {
+  console.log("📩 Message:", req.body);
+  res.sendStatus(200);
+});
+
+// ---------------- START SERVER ----------------
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT);
 });
