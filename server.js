@@ -87,6 +87,7 @@ async function sendMessage(to, text) {
 }
 
 // ================= WHATSAPP WEBHOOK (MAIN BOT) =================
+// ================= WHATSAPP WEBHOOK (AUTO BOT) =================
 app.post("/webhook", async (req, res) => {
   try {
     const entry = req.body.entry?.[0];
@@ -100,13 +101,34 @@ app.post("/webhook", async (req, res) => {
     console.log("📩 Incoming message:", text);
 
     if (from && text) {
-      // SIMPLE AUTO REPLY
-      await sendMessage(from, `🤖 Bot Reply: You said "${text}"`);
+      let reply = "";
+
+      // 🔹 AUTOMATION LOGIC
+      const userMsg = text.toLowerCase();
+
+      if (userMsg.includes("hello") || userMsg.includes("hi")) {
+        reply = "👋 Hi! Welcome to AR Marketing Agency.\nHow can I help you today?";
+      } 
+      else if (userMsg.includes("price")) {
+        reply = "💰 Our pricing starts from ₹5000.\nWould you like full package details?";
+      } 
+      else if (userMsg.includes("services")) {
+        reply = "🚀 We offer:\n• WhatsApp Bots\n• AI Marketing\n• Website Development\n\nWhich service are you interested in?";
+      } 
+      else if (userMsg.includes("yes") || userMsg.includes("interested")) {
+        reply = "🔥 Great! Please share your name and phone number so our team can contact you.";
+      }
+      else {
+        reply = "🤖 Thanks for your message! Our team will contact you soon.";
+      }
+
+      // 🔹 SEND REPLY
+      await sendMessage(from, reply);
     }
 
     res.sendStatus(200);
   } catch (error) {
-    console.log("Webhook error:", error.message);
+    console.log("❌ Webhook error:", error.message);
     res.sendStatus(200);
   }
 });
